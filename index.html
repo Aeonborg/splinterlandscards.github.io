@@ -16,7 +16,7 @@
             text-align: center;
         }
         form {
-            max-width: 600px;
+            max-width: 640px;
             margin: 0 auto;
         }
 
@@ -130,7 +130,7 @@
             <option value="rebellion">Rebellion</option>
             <option value="conclave">Conclave Arcana</option>
             <option value="gladius">Gladius</option>
-            <option value="frontier">Frontier</option>
+            <option value="foundations">Foundations</option>
         </select>
 
         <label for="editionFilter">Edition:</label>
@@ -194,7 +194,7 @@ const EDITION_PATHS = {
     '12': { folder: 'cards_rebellion', ext: 'jpg' }, // Rebellion Core
     '13': { folder: 'cards_soulboundrb', ext: 'jpg' }, // Rebellion Reward
     '14': { folder: 'cards_v2.2', ext: 'jpg' }, // Conclave Core
-    '15': { folder: 'cards_v2.2', ext: 'jpg' }, // Frontier
+    '15': { folder: 'cards_v2.2', ext: 'jpg' }, // Foundations
     '17': { folder: 'cards_v2.2', ext: 'jpg' }, // Conclave Extra
     '18': { folder: 'cards_v2.2', ext: 'jpg' }, // Conclave Reward
     '19': { folder: 'cards_land', ext: 'jpg' }  // Land
@@ -208,7 +208,7 @@ const SET_TO_EDITION = {
     'rebellion': [['12', 'Core'], ['13', 'Reward'], ['2', 'Promo']],
     'conclave': [['14', 'Core'], ['17', 'Extra'], ['2', 'Promo'], ['18', 'Reward']],
     'gladius': [['6', 'Gladiator'], ['19', 'Land']],
-    'frontier': [['15', 'Frontier']]
+    'foundations': [['15', 'Foundations']]
 };
 
 function updateEditionDropdown() {
@@ -294,12 +294,33 @@ async function computeCollection() {
     };
 
     let allCardsAggregate = {};
+    
+    // Enable comprehensive debugging when Foundations is selected
+    let debugMode = filters.set === 'foundations';
+    let uniqueCardSets = new Set();
+    let edition15Cards = [];
 
     for (const username of usernames) {
         let cardAggregates = {};
         try {
             const response = await fetch(`https://api.splinterlands.io/cards/collection/${username}`);
             const data = await response.json();
+
+            // First pass: collect all unique card_set values for debugging
+            if (debugMode) {
+                data.cards.forEach(card => {
+                    uniqueCardSets.add(card.card_set);
+                    if (card.edition === 15) {
+                        const detail = cardDetails[card.card_detail_id] || {};
+                        edition15Cards.push({
+                            name: detail.name,
+                            card_set: card.card_set,
+                            edition: card.edition,
+                            card_detail_id: card.card_detail_id
+                        });
+                    }
+                });
+            }
 
             data.cards.forEach(card => {
                 const detail = cardDetails[card.card_detail_id] || {};
@@ -326,6 +347,15 @@ async function computeCollection() {
 
             if (!allCheckbox) displayData(Object.values(cardAggregates), resultsDiv, username);
         } catch (e) { console.error(`Failed to fetch ${username}`); }
+    }
+
+    // Output debug information
+    if (debugMode) {
+        console.log('=== FOUNDATIONS DEBUG INFO ===');
+        console.log('All unique card_set values found in collection:', Array.from(uniqueCardSets).sort());
+        console.log('Cards with edition 15:', edition15Cards);
+        console.log('Expected card_set value: "foundations"');
+        console.log('==============================');
     }
 
     if (allCheckbox) displayData(Object.values(allCardsAggregate), resultsDiv, "Total Aggregate");
