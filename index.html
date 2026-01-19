@@ -335,7 +335,16 @@ async function computeCollection() {
                 if (filters.set && filters.edition && card.edition.toString() !== filters.edition) return;
                 
                 if (filters.color && color !== filters.color) return;
-                if (filters.type && (detail.type||'').toLowerCase() !== filters.type) return;
+                //if (filters.type && (detail.type||'').toLowerCase() !== filters.type) return;
+				
+				const cardType = (detail.type || '').toLowerCase();
+
+				// Always ignore non-monster/summoner cards
+				if (cardType !== 'monster' && cardType !== 'summoner') return;
+
+				// Then apply user filter
+				if (filters.type && cardType !== filters.type) return;
+			
                 if (filters.rarity && rarity !== filters.rarity) return;
 
                 const key = `${detail.name}_${card.edition}`;
